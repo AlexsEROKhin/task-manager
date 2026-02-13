@@ -1,0 +1,13 @@
+body {
+    font-family: Arial, sans-serif;
+}
+
+li {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+button {
+    margin-left: 10px;
+}
