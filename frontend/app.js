@@ -5,12 +5,17 @@ const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
 const pageInfo = document.getElementById("pageInfo");
 const statusFilterEl = document.getElementById("statusFilter");
+const sortByEl = document.getElementById("sortBy");
+const sortOrderEl = document.getElementById("sortOrder");
 
 
 let tasks = [];
 let limit = 5;
 let offset = 0;
 let statusFilter = "";
+let sortBy = "title";
+let sortOrder = "asc";
+
 
 form.addEventListener("submit", function (event) {
     event.preventDefault();
@@ -26,22 +31,38 @@ form.addEventListener("submit", function (event) {
 });
 
 function renderTasks() {
-  // 1) Сначала фильтруем весь массив tasks → получаем filteredTasks
+  
   const filteredTasks = tasks.filter(function (t) {
-    if (statusFilter === "") return true;       // если фильтр "All" — показываем всё
-    return t.status === statusFilter;           // иначе — только совпадающий статус
+    if (statusFilter === "") return true;       
+    return t.status === statusFilter;        
   });
+    const sortedTasks = [...filteredTasks].sort(function (a, b) {
+    let x = a[sortBy];
+    let y = b[sortBy];
 
-  // 2) Поджимаем offset, чтобы не попасть на "пустую страницу" после удаления
-  clampOffset(filteredTasks.length);
+  
+    x = String(x).toLowerCase();
+    y = String(y).toLowerCase();
 
-  // 3) Очищаем список в HTML и готовим элементы для текущей страницы
+    if (x < y) return -1;
+    if (x > y) return 1;
+    return 0;
+    });
+
+if (sortOrder === "desc") {
+  sortedTasks.reverse();
+}
+
+  
+  clampOffset(sortedTasks.length);
+
+  
   list.innerHTML = "";
 
-  // 4) Берём только кусок массива для текущей страницы (пагинация)
-  const pageItems = filteredTasks.slice(offset, offset + limit);
+  
+  const pageItems = sortedTasks.slice(offset, offset + limit);
 
-  // 5) Рисуем задачи из pageItems
+  
   for (let i = 0; i < pageItems.length; i++) {
     const task = pageItems[i];
 
@@ -71,8 +92,8 @@ function renderTasks() {
     list.appendChild(li);
   }
 
-  // 6) Обновляем инфу о страницах и состояние кнопок (Prev/Next)
-  updatePageInfo(filteredTasks.length);
+  
+  updatePageInfo(sortedTasks.length);
 }
 
 function clampOffset(totalCount) {
@@ -126,6 +147,18 @@ statusFilterEl.addEventListener("change", function () {
   offset = 0;
   renderTasks();
 });
+sortByEl.addEventListener("change", function () {
+  sortBy = sortByEl.value;
+  offset = 0;
+  renderTasks();
+});
+
+sortOrderEl.addEventListener("change", function () {
+  sortOrder = sortOrderEl.value;
+  offset = 0;
+  renderTasks();
+});
+
 
 function updatePageInfo(totalCount) {
   const currentPage = totalCount === 0 ? 0 : Math.floor(offset / limit) + 1;
