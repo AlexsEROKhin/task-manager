@@ -7,12 +7,13 @@ const pageInfo = document.getElementById("pageInfo");
 const statusFilterEl = document.getElementById("statusFilter");
 const sortByEl = document.getElementById("sortBy");
 const sortOrderEl = document.getElementById("sortOrder");
-
+const searchInputEl = document.getElementById("searchInput");
 
 let tasks = [];
 let limit = 5;
 let offset = 0;
 let statusFilter = "";
+let searchQuery = "";
 let sortBy = "title";
 let sortOrder = "asc";
 
@@ -33,8 +34,13 @@ form.addEventListener("submit", function (event) {
 function renderTasks() {
   
   const filteredTasks = tasks.filter(function (t) {
-    if (statusFilter === "") return true;       
-    return t.status === statusFilter;        
+    const matchesStatus =
+    statusFilter === "" || t.status === statusFilter;
+
+    const matchesSearch =
+    t.title.toLowerCase().includes(searchQuery);
+
+    return matchesStatus && matchesSearch;     
   });
     const sortedTasks = [...filteredTasks].sort(function (a, b) {
     let x = a[sortBy];
@@ -158,6 +164,12 @@ sortOrderEl.addEventListener("change", function () {
   offset = 0;
   renderTasks();
 });
+searchInputEl.addEventListener("input", function () {
+  searchQuery = searchInputEl.value.toLowerCase();
+  offset = 0;
+  renderTasks();
+});
+
 
 
 function updatePageInfo(totalCount) {
