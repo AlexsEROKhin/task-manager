@@ -18,7 +18,7 @@ let sortBy = "title";
 let sortOrder = "asc";
 
 
-form.addEventListener("submit", function (event) {
+form.addEventListener("submit", async function (event) {
     event.preventDefault();
     const taskTitle = input.value;
     const newTask = {
@@ -26,8 +26,15 @@ form.addEventListener("submit", function (event) {
         title: taskTitle,
         status: "todo"
     };
-    tasks.push(newTask);
-    renderTasks();
+    await fetch("http://127.0.0.1:8000/tasks", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newTask),
+    });
+
+    loadTasks();
     input.value = "";
 });
 
@@ -113,31 +120,39 @@ function clampOffset(totalCount) {
 }
 
 
-function deleteTask(taskId) {
-  tasks = tasks.filter(function (t) {
-    return t.id !== taskId;
+async function deleteTask(taskId) {
+  await fetch("http://127.0.0.1:8000/tasks/" + taskId, {
+    method: "DELETE",
   });
 
-  renderTasks();
+  loadTasks();
 }
 
 
-function toggleStatus(taskId) {
-    for(let i = 0; i < tasks.length; i++){
-        if(tasks[i].id === taskId){
-           if (tasks[i].status === "todo") {
-                tasks[i].status = "in_progress";
-            } else if (tasks[i].status === "in_progress") {
-                tasks[i].status = "done";
-            } else {
-                tasks[i].status = "todo";
+
+async function toggleStatus(taskId) {
+  // найдём текущую задачу в tasks
+  const task = tasks.find(function (t) {
+    return t.id === taskId;
+  });
+
+  if (!task) return;
+
+  let newStatus = "todo";
+  if (task.status === "todo") newStatus = "in_progress";
+  else if (task.status === "in_progress") newStatus = "done";
+
+  await fetch("http://127.0.0.1:8000/tasks/" + taskId, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ status: newStatus }),
+  });
+
+  loadTasks();
 }
 
-            break;
-        }
-    }
-    renderTasks();
-}
 prevBtn.addEventListener("click", function () {
   offset = Math.max(0, offset - limit);
   renderTasks();
@@ -180,6 +195,13 @@ function updatePageInfo(totalCount) {
   prevBtn.disabled = offset === 0;
   nextBtn.disabled = offset + limit >= totalCount;
 }
+async function loadTasks() {
+  const response = await fetch("http://127.0.0.1:8000/tasks");
+  const data = await response.json();
+  tasks = data;
+  renderTasks();
+}
+loadTasks();
 
 
 
