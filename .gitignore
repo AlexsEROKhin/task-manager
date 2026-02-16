@@ -1,8 +1,10 @@
 # Python
-venv/
+.vscode/
 .venv/
+venv/
 __pycache__/
 *.pyc
+
 
 # Env
 .env
