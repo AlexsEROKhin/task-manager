@@ -9,7 +9,7 @@ const sortByEl = document.getElementById("sortBy");
 const sortOrderEl = document.getElementById("sortOrder");
 const searchInputEl = document.getElementById("searchInput");
 
-const API_URL = "http://127.0.0.1:8000/tasks";
+const API_URL = "http://localhost:8000/tasks";
 
 let tasks = [];
 let totalCount = 0;
@@ -28,13 +28,13 @@ form.addEventListener("submit", async function (event) {
         title: taskTitle,
         status: "todo"
     };
-    await fetch("http://127.0.0.1:8000/tasks", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newTask),
-    });
+    await fetch(API_URL, {
+    method: "POST",
+    headers: {
+    "Content-Type": "application/json",
+    },
+    body: JSON.stringify(newTask),
+  });
 
     loadTasks();
     input.value = "";
@@ -76,9 +76,9 @@ form.addEventListener("submit", async function (event) {
 
 
 async function deleteTask(taskId) {
-  await fetch("http://127.0.0.1:8000/tasks/" + taskId, {
-    method: "DELETE",
-  });
+  await fetch(`${API_URL}/${taskId}`, {
+  method: "DELETE",
+});
 
   loadTasks();
 }
@@ -97,13 +97,13 @@ async function toggleStatus(taskId) {
   if (task.status === "todo") newStatus = "in_progress";
   else if (task.status === "in_progress") newStatus = "done";
 
-  await fetch("http://127.0.0.1:8000/tasks/" + taskId, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ status: newStatus }),
-  });
+  await fetch(`${API_URL}/${taskId}`, {
+  method: "PATCH",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ status: newStatus }),
+});
 
   loadTasks();
 }
