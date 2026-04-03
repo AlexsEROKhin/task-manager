@@ -9,7 +9,10 @@ const sortByEl = document.getElementById("sortBy");
 const sortOrderEl = document.getElementById("sortOrder");
 const searchInputEl = document.getElementById("searchInput");
 
+const API_URL = "http://127.0.0.1:8000/tasks";
+
 let tasks = [];
+let totalCount = 0;
 let limit = 5;
 let offset = 0;
 let statusFilter = "";
@@ -22,7 +25,6 @@ form.addEventListener("submit", async function (event) {
     event.preventDefault();
     const taskTitle = input.value;
     const newTask = {
-        id: Date.now(),
         title: taskTitle,
         status: "todo"
     };
@@ -38,46 +40,10 @@ form.addEventListener("submit", async function (event) {
     input.value = "";
 });
 
-function renderTasks() {
-  
-  const filteredTasks = tasks.filter(function (t) {
-    const matchesStatus =
-    statusFilter === "" || t.status === statusFilter;
-
-    const matchesSearch =
-    t.title.toLowerCase().includes(searchQuery);
-
-    return matchesStatus && matchesSearch;     
-  });
-    const sortedTasks = [...filteredTasks].sort(function (a, b) {
-    let x = a[sortBy];
-    let y = b[sortBy];
-
-  
-    x = String(x).toLowerCase();
-    y = String(y).toLowerCase();
-
-    if (x < y) return -1;
-    if (x > y) return 1;
-    return 0;
-    });
-
-if (sortOrder === "desc") {
-  sortedTasks.reverse();
-}
-
-  
-  clampOffset(sortedTasks.length);
-
-  
+  function renderTasks() {
   list.innerHTML = "";
 
-  
-  const pageItems = sortedTasks.slice(offset, offset + limit);
-
-  
-  for (let i = 0; i < pageItems.length; i++) {
-    const task = pageItems[i];
+  for (let i = 0; i < tasks.length; i++) {    const task = tasks[i];
 
     const li = document.createElement("li");
 
@@ -105,18 +71,7 @@ if (sortOrder === "desc") {
     list.appendChild(li);
   }
 
-  
-  updatePageInfo(sortedTasks.length);
-}
-
-function clampOffset(totalCount) {
-  if (totalCount <= 0) {
-    offset = 0;
-    return;
-  }
-
-  const maxOffset = Math.max(0, Math.floor((totalCount - 1) / limit) * limit);
-  if (offset > maxOffset) offset = maxOffset;
+  updatePageInfo(totalCount);
 }
 
 
@@ -155,34 +110,38 @@ async function toggleStatus(taskId) {
 
 prevBtn.addEventListener("click", function () {
   offset = Math.max(0, offset - limit);
-  renderTasks();
+  loadTasks();
 });
 
 nextBtn.addEventListener("click", function () {
-  offset = offset + limit;
-  renderTasks();
+  if (offset + limit < totalCount) {
+    offset = offset + limit;
+    loadTasks();
+  }
 });
 
 statusFilterEl.addEventListener("change", function () {
   statusFilter = statusFilterEl.value;
   offset = 0;
-  renderTasks();
+  loadTasks();
 });
+
 sortByEl.addEventListener("change", function () {
   sortBy = sortByEl.value;
   offset = 0;
-  renderTasks();
+  loadTasks();
 });
 
 sortOrderEl.addEventListener("change", function () {
   sortOrder = sortOrderEl.value;
   offset = 0;
-  renderTasks();
+  loadTasks();
 });
+
 searchInputEl.addEventListener("input", function () {
   searchQuery = searchInputEl.value.toLowerCase();
   offset = 0;
-  renderTasks();
+  loadTasks();
 });
 
 
@@ -190,15 +149,40 @@ searchInputEl.addEventListener("input", function () {
 function updatePageInfo(totalCount) {
   const currentPage = totalCount === 0 ? 0 : Math.floor(offset / limit) + 1;
   const totalPages = totalCount === 0 ? 0 : Math.ceil(totalCount / limit);
+
   pageInfo.textContent = "Page " + currentPage + " / " + totalPages;
 
   prevBtn.disabled = offset === 0;
   nextBtn.disabled = offset + limit >= totalCount;
 }
 async function loadTasks() {
-  const response = await fetch("http://127.0.0.1:8000/tasks");
+  const params = new URLSearchParams();
+
+  params.set("limit", limit);
+  params.set("offset", offset);
+
+  if (statusFilter) {
+    params.set("status", statusFilter);
+  }
+
+  if (searchQuery) {
+    params.set("search", searchQuery);
+  }
+
+  if (sortBy) {
+    params.set("sort_by", sortBy);
+  }
+
+  if (sortOrder) {
+    params.set("sort_order", sortOrder);
+  }
+
+  const response = await fetch(`${API_URL}?${params.toString()}`);
   const data = await response.json();
-  tasks = data;
+
+  tasks = data.items;
+  totalCount = data.total;
+
   renderTasks();
 }
 loadTasks();
